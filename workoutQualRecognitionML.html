@@ -135,7 +135,15 @@ $(document).ready(function () {
 <div id="synopsis" class="section level2">
 <h2>Synopsis</h2>
 <p>Using personal fitness trackers collecting large amounts of sensor data, it has been possible to quantify how much a person carries out a particular activity. But rarely has it been addressed how <em>well</em> the person carries out that particular activity. The goal of this project is to use the Weight Lifting Exercise Dataset, kindly provided by <a href="mailto:groupware@les">groupware@les</a>, to correctly predict how <em>well</em> a person lifts weights.</p>
-<p>The dataset was collected from accelerometers on the belt, forearm, arm, and dumbbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways, classified as “A” to “E”. Read more <a href="http://groupware.les.inf.puc-rio.br/har#ixzz4CNLAdGub" title="here">here</a>. Using this dataset, a machine learning model was trained and selected based on accuracy performance. The model was then used to predict the workout quality classifications on 20 different test cases.</p>
+<p>The dataset was collected from accelerometers on the belt, forearm, arm, and dumbbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways, classified as “A” to “E”:</p>
+<ul>
+<li>A: exactly according to the specification</li>
+<li>B: throwing the elbows to the front</li>
+<li>C: lifting the dumbbell only halfway</li>
+<li>D: lowering the dumbbell only halfway</li>
+<li>E: throwing the hips to the front</li>
+</ul>
+<p>Read more <a href="http://groupware.les.inf.puc-rio.br/har#ixzz4CNLAdGub" title="here">here</a>. Using this dataset, a machine learning model was trained and selected based on accuracy performance. The model was then used to predict the workout quality classifications on 20 different test cases.</p>
 </div>
 <div id="har-data-processing-and-exploratory-analysis" class="section level2">
 <h2>HAR data processing and exploratory analysis</h2>
@@ -144,14 +152,7 @@ $(document).ready(function () {
 <p>The HAR Weight Lifting Exercises Datasets were downloaded and read into Rstudio as “data” and “dataToFit” data frame objects using the read.csv function. “data” contains 19622 observations on 160 variables; while “dataToFit” contains only 20 observations.</p>
 <p>The 1st variable, “X”, contains sequentially incrementing integers that are the indexes of each observations. Names of users, timestamp, and sliding-window information are found in the 2nd to the 7th variables. Data collected from the wearable accelerometers are in the 8th to the 159th variables. The 160th variable, “classe”, contains the workout classification data with the values of “A” to “E”.</p>
 <p>“dataToFit” has all the same variables as “data”, except that the 160th variable is “problem_id” instead of “classe”. The goal of this report is to train a suitable machine learning model and use the selected model to predict the workout quality for the 20 observations in the “dataToFit” dataset.</p>
-</div>
-<div id="data-reduction-and-processing" class="section level4">
-<h4>Data reduction and processing</h4>
-<p>Firstly, it is found that in “data” 67 out of 160 variables have missing data (NAs), and each of these 100 variables contains 19216 NAs out of total 19622 observations; while in “dataToFit” 100 out 160 variables have NAs, and each of these 100 variables contains only NAs. Variables that contain NAs in either “data” or “dataToFit” were excluded from downstream analysis.</p>
-<p>Secondly, the 2nd to the 7th variables were removed since the sensor data should be user-agnostic, and timestamp, number of sliding-windows information should not be relevant to workout quality prediction.</p>
-<p>Thirdly, the presence of near zero variance variables were checked and none were found. Therefore, all the remaining variables were kept.</p>
-<p>Lastly, the “classe” values in “data” were found to be grouped (see figure below). To ensure randomness in the “classe” values in the dataset, the row order of “data” was scrambled with the seed set at “1234”.</p>
-<p>The R code chunk and output for data downloading, processing, and analysis are below.</p>
+<p>See R code chunk and output below for data download and summary information.</p>
 <pre class="r"><code># download data
 rm(list=ls())
 urlTrain &lt;- &quot;https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv&quot;
@@ -175,6 +176,14 @@ dim(data); dim(dataToFit)</code></pre>
 ## [7] &quot;num_window&quot;           &quot;roll_belt&quot;            &quot;pitch_belt&quot;</code></pre>
 <pre><code>## [1] &quot;magnet_forearm_y&quot; &quot;magnet_forearm_z&quot; &quot;classe&quot;</code></pre>
 <pre><code>## [1] &quot;magnet_forearm_y&quot; &quot;magnet_forearm_z&quot; &quot;problem_id&quot;</code></pre>
+</div>
+<div id="data-reduction-and-variable-selection" class="section level4">
+<h4>Data reduction and variable selection</h4>
+<p>Firstly, it is found that in “data” 67 out of 160 variables have missing data (NAs), and each of these 100 variables contains 19216 NAs out of total 19622 observations; while in “dataToFit” 100 out 160 variables have NAs, and each of these 100 variables contains only NAs. Variables that contain NAs in either “data” or “dataToFit” were excluded from downstream analysis.</p>
+<p>Secondly, the 2nd to the 7th variables were removed since the sensor data should be user-agnostic, and timestamp, number of sliding-windows information should not be relevant to workout quality prediction.</p>
+<p>Thirdly, the presence of near zero variance variables were checked and none were found. Therefore, all the remaining variables were kept.</p>
+<p>Lastly, the “classe” values in “data” were found to be grouped (see figure below). To ensure randomness in the “classe” values in the dataset, the row order of “data” was scrambled with the seed set at “1234”.</p>
+<p>See R code chunk and output below for data reduction and variable selection.</p>
 <pre class="r"><code># count number of variables that contain missing data
 table(colSums(is.na(data))); table(colSums(is.na(dataToFit)))</code></pre>
 <pre><code>## 
@@ -216,7 +225,7 @@ data &lt;- data[sample(nrow(data)), ]</code></pre>
 <p>Since random forests and boosting are among the most common and better performing machine learning algorithms in use, random forests (rf) and generalized boosting model (gbm) were selected for model training using the caret package. Accuracy was set as the metrics for model performance evaluations, since it is an appropriate metrics for factor variables, like “classe”.</p>
 <p>The “data” dataset was split in 70/30 ratio into a “training” and a “testing” dataset. The “training” dataset was used to train both a random forest model and a generalized boosting model, both using 10-fold cross-validation.</p>
 <p>The random forest model (rfMod) outperformed the generalized booting model (gbmMod) on in-sample accuracy, 0.9923560 vs 0.9622918, and was thus selected.</p>
-<p>The R code chunk and output for machine learning model training and selection are below.</p>
+<p>See R code chunk and output below for model training and selection.</p>
 <pre class="r"><code># split tidy data into training and testing datasets in 70/30 portions
 # using random data sampling createDataPartition function from the caret package
 suppressMessages(library(caret, quietly=TRUE, warn.conflicts=FALSE))
@@ -264,8 +273,8 @@ gbmMod$results[, 4:8] ## Accuracy : 0.9622918</code></pre>
 <h2>Model performance (out-of-sample accuracy) evaluation on “testing” dataset</h2>
 <p>The selected random forests model (rfMod) was applied to the hold-out samples of the “testing” dataset. The out-of-sample accuracy was found to be 0.9937.</p>
 <p>With a high in-sample accuracy of 0.9923560, it was a concern that the random forests model may have overfitted the “training”&quot; dataset. When models overfit, it is expected to observe the out-of-sample error rate larger than the in-sample error rate. Since the out-of-sample accuracy of 0.9937 is actually better than the in-sample accuracy of 0.9923560, the random forests model did not overfit the “training” dataset.</p>
-<p>The top-10 most important variables were identified in the random forests model. It was found that 3 were from the belt sensor, 3 from the forearm sensor, and 4 from the dumbbell.</p>
-<p>The R code chunk and output for model performance evaluation are below.</p>
+<p>The top-10 most important variables were identified in the random forests model. It was found that 3 were from the belt sensor, 3 from the forearm sensor, 4 from the dumbbell sensor, and none from the sensor on the arm.</p>
+<p>See R code chunk and output below for out-of-sample model performance evaluation.</p>
 <pre class="r"><code># select and fit the best model on testing dataset to evaluate out-of-sample accuracy
 predTest &lt;- predict(rfMod, newdata=testing)
 confusionMatrix(predTest, testing$classe) # Accuracy : 0.9937</code></pre>
@@ -321,7 +330,6 @@ head(newImp, 10L)</code></pre>
 <div id="prediction-of-workout-quality-using-the-selected-machine-learning-model" class="section level2">
 <h2>Prediction of workout quality using the selected machine learning model</h2>
 <p>The random forests model (rfMod) was used to predict the workout quality classifications of the 20 cases in “dataToFit”. With the out-of-sample accuracy of 0.9937, the probability of correctly predicting all 20 cases is 0.88.</p>
-<p>The R code chunk and output for prediction are below.</p>
 <pre class="r"><code># fit model on dataToFit dataset to predict/recognize workout quality
 rfDataToFit &lt;- predict(rfMod, newdata=dataToFit)
 

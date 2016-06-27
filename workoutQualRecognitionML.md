@@ -4,11 +4,20 @@ June 25, 2016
 
 
 
+
 ## Synopsis
 
 Using personal fitness trackers collecting large amounts of sensor data, it has been possible to quantify how much a person carries out a particular activity. But rarely has it been addressed how _well_ the person carries out that particular activity. The goal of this project is to use the Weight Lifting Exercise Dataset, kindly provided by groupware@les, to correctly predict how _well_ a person lifts weights.
 
-The dataset was collected from accelerometers on the belt, forearm, arm, and dumbbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways, classified as "A" to "E". Read more [here][1]. Using this dataset, a machine learning model was trained and selected based on accuracy performance. The model was then used to predict the workout quality classifications on 20 different test cases. 
+The dataset was collected from accelerometers on the belt, forearm, arm, and dumbbell of 6 participants. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways, classified as "A" to "E":
+
+- A: exactly according to the specification
+- B: throwing the elbows to the front
+- C: lifting the dumbbell only halfway
+- D: lowering the dumbbell only halfway
+- E: throwing the hips to the front
+
+Read more [here][1]. Using this dataset, a machine learning model was trained and selected based on accuracy performance. The model was then used to predict the workout quality classifications on 20 different test cases. 
 
 [1]: http://groupware.les.inf.puc-rio.br/har#ixzz4CNLAdGub "here"
 
@@ -22,17 +31,8 @@ The 1st variable, "X", contains sequentially incrementing integers that are the 
 
 "dataToFit" has all the same variables as "data", except that the 160th variable is "problem_id" instead of "classe". The goal of this report is to train a suitable machine learning model and use the selected model to predict the workout quality for the 20 observations in the "dataToFit" dataset.
 
-#### Data reduction and processing
+See R code chunk and output below for data download and summary information.
 
-Firstly, it is found that in "data" 67 out of 160 variables have missing data (NAs), and each of these 100 variables contains 19216 NAs out of total 19622 observations; while in "dataToFit" 100 out 160 variables have NAs, and each of these 100 variables contains only NAs. Variables that contain NAs in either "data" or "dataToFit" were excluded from downstream analysis. 
-
-Secondly, the 2nd to the 7th variables were removed since the sensor data should be user-agnostic, and timestamp, number of sliding-windows information should not be relevant to workout quality prediction.
-
-Thirdly, the presence of near zero variance variables were checked and none were found. Therefore, all the remaining variables were kept.
-
-Lastly, the "classe" values in "data" were found to be grouped (see figure below). To ensure randomness in the "classe" values in the dataset, the row order of "data" was scrambled with the seed set at "1234".
-
-The R code chunk and output for data downloading, processing, and analysis are below.
 
 
 ```r
@@ -78,6 +78,21 @@ head(names(data), 9L); tail(names(data), 3L); tail(names(dataToFit), 3L)
 ```
 ## [1] "magnet_forearm_y" "magnet_forearm_z" "problem_id"
 ```
+
+
+#### Data reduction and variable selection
+
+Firstly, it is found that in "data" 67 out of 160 variables have missing data (NAs), and each of these 100 variables contains 19216 NAs out of total 19622 observations; while in "dataToFit" 100 out 160 variables have NAs, and each of these 100 variables contains only NAs. Variables that contain NAs in either "data" or "dataToFit" were excluded from downstream analysis. 
+
+Secondly, the 2nd to the 7th variables were removed since the sensor data should be user-agnostic, and timestamp, number of sliding-windows information should not be relevant to workout quality prediction.
+
+Thirdly, the presence of near zero variance variables were checked and none were found. Therefore, all the remaining variables were kept.
+
+Lastly, the "classe" values in "data" were found to be grouped (see figure below). To ensure randomness in the "classe" values in the dataset, the row order of "data" was scrambled with the seed set at "1234".
+
+See R code chunk and output below for data reduction and variable selection.
+
+
 
 ```r
 # count number of variables that contain missing data
@@ -142,13 +157,14 @@ library(lattice)
 xyplot(classe ~ 1:dim(data)[1], data, xlab="row number", ylab="Workout quality (classe)")
 ```
 
-![](workoutQualRecognitionML_files/figure-html/data download & exploratory analysis-1.png)<!-- -->
+![](workoutQualRecognitionML_files/figure-html/data reduction and exploratory analysis-1.png)<!-- -->
 
 ```r
 # scramble row order in data
 set.seed(1234)
 data <- data[sample(nrow(data)), ]
 ```
+
 
 ## Machine learning model training and selection
 
@@ -158,8 +174,7 @@ The "data" dataset was split in 70/30 ratio into a "training" and a "testing" da
 
 The random forest model (rfMod) outperformed the generalized booting model (gbmMod) on in-sample accuracy, 0.9923560 vs 0.9622918, and was thus selected. 
 
-The R code chunk and output for machine learning model training and selection are below.
-
+See R code chunk and output below for model training and selection.
 
 
 ```r
@@ -223,9 +238,9 @@ The selected random forests model (rfMod) was applied to the hold-out samples of
 
 With a high in-sample accuracy of 0.9923560, it was a concern that the random forests model may have overfitted the "training"" dataset. When models overfit, it is expected to observe the out-of-sample error rate larger than the in-sample error rate. Since the out-of-sample accuracy of 0.9937 is actually better than the in-sample accuracy of 0.9923560, the random forests model did not overfit the "training" dataset.
 
-The top-10 most important variables were identified in the random forests model. It was found that 3 were from the belt sensor, 3 from the forearm sensor, and 4 from the dumbbell.
+The top-10 most important variables were identified in the random forests model. It was found that 3 were from the belt sensor, 3 from the forearm sensor, 4 from the dumbbell sensor, and none from the sensor on the arm.
 
-The R code chunk and output for model performance evaluation are below.
+See R code chunk and output below for out-of-sample model performance evaluation.
 
 
 ```r
@@ -291,11 +306,11 @@ head(newImp, 10L)
 ## 10     roll_dumbbell   16.58776
 ```
 
+
 ## Prediction of workout quality using the selected machine learning model
 
 The random forests model (rfMod) was used to predict the workout quality classifications of the 20 cases in "dataToFit". With the out-of-sample accuracy of 0.9937, the probability of correctly predicting all 20 cases is 0.88.
 
-The R code chunk and output for prediction are below.
 
 
 ```r
