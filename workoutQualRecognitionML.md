@@ -177,6 +177,7 @@ The random forest model (rfMod) outperformed the generalized booting model (gbmM
 See R code chunk and output below for model training and selection.
 
 
+
 ```r
 # split tidy data into training and testing datasets in 70/30 portions
 # using random data sampling createDataPartition function from the caret package

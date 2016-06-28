@@ -42,7 +42,7 @@ The 1st variable, "X", contains sequentially incrementing integers that are the 
 See R code chunk and output below for data download and summary information.
 
 
-```{r data download & summary information, message=FALSE, cache=TRUE}
+```{r data download & summary information, message=FALSE, cache=FALSE}
 
 # download data
 rm(list=ls())
@@ -76,7 +76,7 @@ Lastly, the "classe" values in "data" were found to be grouped (see figure below
 See R code chunk and output below for data reduction and variable selection.
 
 
-``` {r data reduction and exploratory analysis, message=FALSE, cache=TRUE}
+``` {r data reduction and exploratory analysis, message=FALSE, cache=FALSE}
 # count number of variables that contain missing data
 table(colSums(is.na(data))); table(colSums(is.na(dataToFit)))
 
@@ -116,7 +116,8 @@ The random forest model (rfMod) outperformed the generalized booting model (gbmM
 
 See R code chunk and output below for model training and selection.
 
-```{r model fitting with parallel processing, message=FALSE, cache=TRUE}
+
+```{r model fitting with parallel processing, message=FALSE, cache=FALSE}
 # split tidy data into training and testing datasets in 70/30 portions
 # using random data sampling createDataPartition function from the caret package
 suppressMessages(library(caret, quietly=TRUE, warn.conflicts=FALSE))
@@ -159,7 +160,7 @@ The top-10 most important variables were identified in the random forests model.
 
 See R code chunk and output below for out-of-sample model performance evaluation.
 
-```{r evaluate out-of-sample performance, cache=TRUE}
+```{r evaluate out-of-sample performance, cache=FALSE}
 # select and fit the best model on testing dataset to evaluate out-of-sample accuracy
 predTest <- predict(rfMod, newdata=testing)
 confusionMatrix(predTest, testing$classe) # Accuracy : 0.9937
@@ -178,7 +179,7 @@ head(newImp, 10L)
 The random forests model (rfMod) was used to predict the workout quality classifications of the 20 cases in "dataToFit". With the out-of-sample accuracy of 0.9937, the probability of correctly predicting all 20 cases is 0.88.
 
 
-``` {r predict workout performance, cache=TRUE}
+``` {r predict workout performance, cache=FALSE}
 # fit model on dataToFit dataset to predict/recognize workout quality
 rfDataToFit <- predict(rfMod, newdata=dataToFit)
 
